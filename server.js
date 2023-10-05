@@ -16,7 +16,7 @@ app.use((req, res, next) => {
 });
 
 // Địa chỉ máy chủ backend API của bạn (GitHub không phải là máy chủ backend)
-const backendTarget = "https://backendw688.vercel.app"; // Thay đổi thành địa chỉ thực tế của bạn
+const backendTarget = "https://backend-litestream-w688-pro.vercel.app/"; // Thay đổi thành địa chỉ thực tế của bạn
 
 // Địa chỉ máy chủ video (được proxy đến)
 const videoTarget = "https://boc8.fun";
