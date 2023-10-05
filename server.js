@@ -15,8 +15,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Địa chỉ máy chủ backend API của bạn (GitHub không phải là máy chủ backend)
-const backendTarget = "https://backend-litestream-w688-pro.vercel.app/"; // Thay đổi thành địa chỉ thực tế của bạn
+// Địa chỉ máy chủ backend API của bạn
+const backendTarget = "https://backend-litestream-w688-pro.vercel.app/";
 
 // Địa chỉ máy chủ video (được proxy đến)
 const videoTarget = "https://boc8.fun";
@@ -41,6 +41,13 @@ const videoProxy = createProxyMiddleware("/getVideo", {
 
 app.use("/getVideo", videoProxy);
 
+function handleProxyError(err, req, res) {
+  res.writeHead(500, {
+    "Content-Type": "text/plain",
+  });
+  res.end(`Error occurred: ${err}`);
+}
+
 // Endpoint để lấy URL video được mã hóa
 app.get("/getEncodedURL", (req, res) => {
   const videoURL = `${backendTarget}/getVideo?v=1696501051387`;
@@ -49,6 +56,6 @@ app.get("/getEncodedURL", (req, res) => {
   res.send(encodedURL);
 });
 
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, () => {
   console.log(`Proxy Server is running on port ${port}`);
 });
