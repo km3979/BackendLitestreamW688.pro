@@ -16,7 +16,7 @@ app.use((req, res, next) => {
 });
 
 // Địa chỉ máy chủ backend API của bạn
-const backendTarget = "https://backend-litestream-w688-pro.vercel.app/";
+const backendTarget = "https://backend-litestream-w688-pro.vercel.app";
 
 // Địa chỉ máy chủ video (được proxy đến)
 const videoTarget = "https://boc8.fun";
