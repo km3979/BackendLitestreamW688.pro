@@ -1,61 +1,47 @@
-const express = require("express");
-const { createProxyMiddleware } = require("http-proxy-middleware");
-const btoa = require("btoa-lite");
+const WebSocket = require('ws');
+const http = require('http');
 
-const app = express();
-const port = process.env.PORT || 5000;
-
-// Middleware xử lý CORS
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('WebSocket Server\n');
 });
 
-// Địa chỉ máy chủ backend API của bạn
-const backendTarget = "https://backend-litestream-w688-pro.vercel.app";
+const wss = new WebSocket.Server({ server });
 
-// Địa chỉ máy chủ video (được proxy đến)
-const videoTarget = "https://boc8.fun";
+let onlineUsersCount = 1339; // Khởi tạo số người trực tuyến với giá trị tối thiểu là 1339
 
-// Middleware proxy cho định tuyến "/api" tới máy chủ backend API
-const apiProxy = createProxyMiddleware("/api", {
-  target: backendTarget,
-  changeOrigin: true,
+wss.on('connection', (ws) => {
+    console.log('Client connected');
+
+    ws.send(JSON.stringify({ onlineUsersCount }));
+
+    ws.on('message', (message) => {
+        console.log(`Received message: ${message}`);
+        if (message === 'getOnlineUsersCount') {
+            ws.send(JSON.stringify({ onlineUsersCount }));
+        }
+    });
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
 });
 
-app.use("/api", apiProxy);
-
-// Middleware proxy cho định tuyến "/getVideo" để ẩn địa chỉ URL
-const videoProxy = createProxyMiddleware("/getVideo", {
-  target: videoTarget,
-  changeOrigin: true,
-  pathRewrite: {
-    "^/getVideo": "/kubet", // Thay đổi '/getVideo' thành '/kubet'
-  },
-  onError: handleProxyError, // Sự kiện lỗi cho proxy video
+server.listen(8080, () => {
+    console.log('WebSocket server is listening on port 8080');
 });
 
-app.use("/getVideo", videoProxy);
+// Logic tăng/giảm số người trực tuyến sau mỗi khoảng thời gian
+setInterval(() => {
+    const randomChange = Math.random() > 0.5 ? 1 : -1;
+    onlineUsersCount += randomChange;
+    broadcastOnlineUsersCount();
+}, 5000);
 
-function handleProxyError(err, req, res) {
-  res.writeHead(500, {
-    "Content-Type": "text/plain",
-  });
-  res.end(`Error occurred: ${err}`);
+function broadcastOnlineUsersCount() {
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ onlineUsersCount }));
+        }
+    });
 }
-
-// Endpoint để lấy URL video được mã hóa
-app.get("/getEncodedURL", (req, res) => {
-  const videoURL = `${backendTarget}/getVideo?v=1696501051387`;
-  const encodedURL = btoa(videoURL);
-  res.header("Content-Type", "text/plain");
-  res.send(encodedURL);
-});
-
-app.listen(port, () => {
-  console.log(`Proxy Server is running on port ${port}`);
-});
